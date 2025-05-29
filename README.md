@@ -84,7 +84,6 @@ news-summary-gke/
 ### Kodları Bilgisayarınıza İndirme
 
 ```bash
-git init
 git clone https://github.com/hakanbayraktar/news-summary-gke.git
 cd news-summary-gke
 ``` 
@@ -233,7 +232,8 @@ Projenin manifests/argocd-app.yaml dosyasında ArgoCD'nin GitHub repository’si
 | `DB_USER`          | MySQL kullanıcı adı                   |
 | `DB_PASS`          | MySQL şifresi                         |
 | `DB_NAME`          | MySQL veritabanı adı                  |
-| `NEWS_API_KEY`     | NEWS API anahtarınız                |
+| `NEWS_API_KEY`     | NEWS API anahtarınız                  |
+| `DB_HOST_EXTERNAL` | MySQl Nodeport IP+ port 30306         |
 | `GH_PAT`           | GitHub Personal Access Token (workflow + repo) izinleri açık olmalı
 → GitHub repo > Settings > Secrets and variables  > Actions > Variables
 .
@@ -275,7 +275,7 @@ git init
 git add .
 git commit -m "first commit"
 git branch -M main
-git remote add origin <https://github.com/username/news-summary-gke-test.git>
+git remote add origin https://github.com/username/news-summary-gke-test.git
 git push -u origin main
 ```
 
@@ -287,6 +287,7 @@ kubectl get svc
 ```
 
 NAME             TYPE           CLUSTER-IP       EXTERNAL-IP     PORT(S)          AGE
+mysql-nodepport  NodePort       34.118.238.93    <none>          3306:30306/TCP   15h
 news-frontend    LoadBalancer   34.118.233.22    34.28.153.207   80:31264/TCP     17h
 news-service     LoadBalancer   34.118.227.166   34.173.62.102   80:30428/TCP     15h
 
@@ -297,7 +298,7 @@ news-service     LoadBalancer   34.118.227.166   34.173.62.102   80:30428/TCP   
 |------------|---------------------------|-------------------------------|
 | 🖥️ Frontend | news-frontend             | <http://34.28.153.207>          |
 | ⚙️ Backend  | news-service              | <http://34.173.62.102/news>     |
-
+| 🐬 MySQL    | NodePort üzerinden erişim | 34.118.238.93:30306             |
 📝 Açıklama:
 
 - news-frontend: React arayüzüne erişim sağlar
