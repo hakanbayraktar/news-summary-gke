@@ -1,0 +1,13 @@
+CREATE DATABASE IF NOT EXISTS newsdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE newsdb;
+
+CREATE TABLE IF NOT EXISTS news (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(512) UNIQUE,
+    summary TEXT,
+    url TEXT,
+    published_at DATETIME,
+    language VARCHAR(10) DEFAULT 'en',
+    country VARCHAR(10) DEFAULT 'us'
+);

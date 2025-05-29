@@ -1,0 +1,99 @@
+name: Infrastructure Setup (One-Time Manual)
+
+on:
+  workflow_dispatch:  # 🔘 Manuel Run
+
+jobs:
+  setup-infra:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⏬ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ☁️ Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          install_components: kubectl
+
+      - name: 🔐 Authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+      - name: 🔑 Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials "${{ vars.GKE_CLUSTER_NAME }}" \
+            --region "${{ vars.GKE_REGION }}" \
+            --project "${{ vars.GCP_PROJECT_ID }}"
+
+      - name: 🔐 Create and apply Kubernetes Secret
+        run: |
+          cat <<EOF > manifests/app-secrets.yaml
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: app-secrets
+          type: Opaque
+          stringData:
+            DB_USER: "${{ secrets.DB_USER }}"
+            DB_PASS: "${{ secrets.DB_PASS }}"
+            DB_NAME: "${{ secrets.DB_NAME }}"
+            NEWS_API_KEY: "${{ secrets.NEWS_API_KEY }}"
+          EOF
+          kubectl apply -f manifests/app-secrets.yaml
+
+      - name: 📦 Apply Kubernetes Configs (ConfigMap, MySQL)
+        run: |
+          kubectl apply -f manifests/argocd-app.yaml
+          kubectl apply -f manifests/mysql-init-configmap.yaml
+          kubectl apply -f manifests/mysql-statefulset.yaml
+          kubectl apply -f manifests/mysql-service.yaml
+          kubectl apply -f manifests/service-backend.yaml
+          kubectl apply -f manifests/service-frontend.yaml
+  
+          echo "⏳ Waiting 20s for MySQL pod to start..."
+          sleep 20
+
+      - name: 🧱 Apply MySQL User Setup Job
+        run: |
+          echo "📌 Creating MySQL root user for remote access..."
+          cat <<EOF > manifests/mysql-user-job.yaml
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: mysql-user-setup
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: mysql-user
+                    image: mysql:8.0
+                    command: ["sh", "-c"]
+                    args:
+                      - |
+                        echo "⏳ Waiting for MySQL to be ready..."
+                        sleep 30
+                        mysql -h mysql -u root -p\$DB_PASS -e "
+                          CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '\$DB_PASS';
+                          GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+                          FLUSH PRIVILEGES;
+                        "
+                    env:
+                      - name: DB_PASS
+                        valueFrom:
+                          secretKeyRef:
+                            name: app-secrets
+                            key: DB_PASS
+                restartPolicy: Never
+            backoffLimit: 1
+          EOF
+
+          kubectl apply -f manifests/mysql-user-job.yaml
+
+          echo "⏳ Waiting for job to complete..."
+          sleep 40
+
+        # echo "🧹 Cleaning up completed MySQL job..."
+        # kubectl delete job mysql-user-setup || true

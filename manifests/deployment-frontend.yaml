@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: news-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: news-frontend
+  template:
+    metadata:
+      labels:
+        app: news-frontend
+    spec:
+      containers:
+        - name: news-frontend
+          image: us-central1-docker.pkg.dev/news-summary-project-461209/news-app/news-frontend:8
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80

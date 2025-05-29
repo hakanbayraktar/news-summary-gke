@@ -1,0 +1,39 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+news-app/news-app-local-dev/.env
+
+# Frontend build
+frontend/dist/
+frontend/build/
+
+# Vite/React cache
+frontend/.vite/
+frontend/.cache/
+
+# Log files
+*.log
+logs/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Scripts
+scripts/*.sh
+scripts/*.json
+
+# Coverage & test outputs
+coverage/
+test-output/
+
+# Python (if used in future)
+__pycache__/
+*.py[cod]
+
+# VSCode / JetBrains / IDEs
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,56 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: local-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: my-secret-pw
+      MYSQL_DATABASE: newsdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-net
+
+  app:
+    build:
+      context: ../
+      dockerfile: ./news-app-local-dev/Dockerfile
+    container_name: news-app
+    depends_on:
+      - mysql
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      NEWS_API_KEY: ${NEWS_API_KEY}
+      PORT: ${PORT}
+    ports:
+      - "3000:3000"
+    networks:
+      - app-net
+    working_dir: /usr/src/app
+    command: npm run dev
+
+  frontend:
+    build:
+      context: ../
+      dockerfile: ./news-app-local-dev/Dockerfile.frontend
+    container_name: frontend
+    depends_on:
+      - app
+    ports:
+      - "5173:5173"
+    networks:
+      - app-net
+    working_dir: /app
+    command:  npm run dev -- --host
+
+volumes:
+  mysql-data:
+
+networks:
+  app-net:
+    driver: bridge

@@ -1,0 +1,34 @@
+name: Fetch News
+
+on:
+  schedule:
+     - cron: '*/15 * * * *'   # Every 15 minutes (disabled for now)
+    #- cron: '0 */12 * * *'     # Every 12 hours (active)
+  workflow_dispatch:
+
+jobs:
+  fetch-news:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Install dependencies
+      run: npm install
+      working-directory: ./news-app
+
+    - name: Run news fetch script
+      run: node fetch-news.js
+      working-directory: ./news-app
+      env:
+        DB_HOST: ${{ secrets.DB_HOST_EXTERNAL }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASS: ${{ secrets.DB_PASS }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}

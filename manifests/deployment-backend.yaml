@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: news-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: news-app
+  template:
+    metadata:
+      labels:
+        app: news-app
+    spec:
+      containers:
+        - name: news-app
+          image: us-central1-docker.pkg.dev/news-summary-project-461209/news-app/news-backend:8
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DB_HOST
+              value: mysql
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_USER
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PASS
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_NAME
+            - name: NEWS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: NEWS_API_KEY
